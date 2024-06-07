@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_LINE_LENGTH 1024
+#define MAX_ENTRIES 1000
+
+// Function to read data from a file
+int read_data(const char *filename, double data[], int *size) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Failed to open file");
+        return 1;
+    }
+
+    char line[MAX_LINE_LENGTH];
+    *size = 0;
+    
+    while (fgets(line, sizeof(line), file)) {
+        char *token = strtok(line, ",");
+        while (token != NULL) {
+            data[*size] = atof(token);
+            (*size)++;
+            token = strtok(NULL, ",");
+        }
+    }
+
+    fclose(file);
+    return 0;
+}
+
+// Function to clean data by removing invalid entries (e.g., NaN, negative values)
+int clean_data(double data[], int *size) {
+    int j = 0;
+    for (int i = 0; i < *size; i++) {
+        if (data[i] >= 0) {  // Example condition: keep only non-negative values
+            data[j] = data[i];
+            j++;
+        }
+    }
+    *size = j;
+    return 0;
+}
+
+// Function to normalize data
+void normalize_data(double data[], int size) {
+    double min = data[0];
+    double max = data[0];
+
+    for (int i = 1; i < size; i++) {
+        if (data[i] < min) min = data[i];
+        if (data[i] > max) max = data[i];
+    }
+
+    for (int i = 0; i < size; i++) {
+        data[i] = (data[i] - min) / (max - min);
+    }
+}
+
+int main() {
+    double data[MAX_ENTRIES];
+    int size;
+
+    if (read_data("data.txt", data, &size)) {
+        fprintf(stderr, "Error reading data\n");
+        return 1;
+    }
+
+    if (clean_data(data, &size)) {
+        fprintf(stderr, "Error cleaning data\n");
+        return 1;
+    }
+
+    normalize_data(data, size);
+
+    printf("Processed Data:\n");
+    for (int i = 0; i < size; i++) {
+        printf("%f\n", data[i]);
+    }
+
+    return 0;
+}
